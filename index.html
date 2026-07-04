@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="نظام إدارة مؤسسة الأيتام - تطبيق ويب تقدمي يعمل بدون إنترنت">
+    <meta name="theme-color" content="#4f46e5">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="مؤسسة الأيتام">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    
+    <title>نظام إدارة مؤسسة الأيتام</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // إعدادات Tailwind للغة العربية والتصميم البنفسجي العصري
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            200: '#c7d2fe',
+                            300: '#a5b4fc',
+                            400: '#818cf8',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            800: '#3730a3',
+                            900: '#312e81',
+                        },
+                        secondary: {
+                            50: '#fdf4ff',
+                            100: '#fae8ff',
+                            200: '#f5d0fe',
+                            300: '#f0abfc',
+                            400: '#e879f9',
+                            500: '#d946ef',
+                            600: '#c026d3',
+                            700: '#a21caf',
+                            800: '#86198f',
+                            900: '#701a75',
+                        }
+                    },
+                    fontFamily: {
+                        'arabic': ['Tajawal', 'Cairo', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- خط Tajawal من Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@200;300;400;500;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome للأيقونات -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js للرسوم البيانية -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- SheetJS لتصدير واستيراد Excel -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    
+    <!-- jsPDF لتصدير PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    
+    <!-- ملفات المشروع -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="font-arabic bg-gray-50 text-gray-800 min-h-screen flex flex-col">
+
+    <!-- ==================== شاشة التحميل (Splash Screen) ==================== -->
+    <div id="splash-screen" class="fixed inset-0 bg-gradient-to-br from-indigo-600 to-purple-700 z-50 flex flex-col items-center justify-center transition-opacity duration-500">
+        <div class="text-white text-center">
+            <i class="fas fa-hands-helping text-7xl mb-6 animate-pulse"></i>
+            <h1 class="text-3xl font-bold mb-2">مؤسسة الأيتام</h1>
+            <p class="text-purple-200 text-lg">نظام الإدارة الشامل</p>
+            <div class="mt-8 flex space-x-2 space-x-reverse justify-center">
+                <div class="w-3 h-3 bg-white rounded-full animate-bounce" style="animation-delay: 0s"></div>
+                <div class="w-3 h-3 bg-white rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                <div class="w-3 h-3 bg-white rounded-full animate-bounce" style="animation-delay: 0.4s"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== صفحة تسجيل الدخول ==================== -->
+    <div id="login-page" class="hidden fixed inset-0 bg-gradient-to-br from-indigo-600 to-purple-700 z-40 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 transform transition-all">
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-20 h-20 bg-purple-100 rounded-full mb-4">
+                    <i class="fas fa-hands-helping text-4xl text-purple-600"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-800">تسجيل الدخول</h2>
+                <p class="text-gray-500 mt-1">أدخل بيانات الاعتماد للوصول للنظام</p>
+            </div>
+            <form id="login-form" class="space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">اسم المستخدم</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400">
+                            <i class="fas fa-user"></i>
+                        </span>
+                        <input type="text" id="login-username" required 
+                               class="w-full pr-10 pl-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                               placeholder="أدخل اسم المستخدم">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">كلمة المرور</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400">
+                            <i class="fas fa-lock"></i>
+                        </span>
+                        <input type="password" id="login-password" required 
+                               class="w-full pr-10 pl-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                               placeholder="أدخل كلمة المرور">
+                    </div>
+                </div>
+                <button type="submit" 
+                        class="w-full bg-purple-600 text-white py-3 rounded-xl font-semibold hover:bg-purple-700 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+                    <i class="fas fa-sign-in-alt ml-2"></i>
+                    دخول
+                </button>
+            </form>
+            <p id="login-error" class="text-red-500 text-sm text-center mt-4 hidden"></p>
+        </div>
+    </div>
+
+    <!-- ==================== التطبيق الرئيسي ==================== -->
+    <div id="app-container" class="hidden flex flex-col lg:flex-row flex-1">
+        
+        <!-- ==================== القائمة الجانبية (Sidebar) ==================== -->
+        <aside id="sidebar" class="bg-white shadow-xl lg:w-72 w-full lg:min-h-screen lg:sticky lg:top-0 z-30 transition-all duration-300">
+            <!-- شعار المؤسسة في القائمة -->
+            <div class="p-6 border-b border-gray-100 flex items-center justify-between">
+                <div class="flex items-center space-x-3 space-x-reverse">
+                    <div class="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-hands-helping text-xl text-purple-600"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-gray-800 text-lg">مؤسسة الأيتام</h1>
+                        <p class="text-xs text-gray-400">نظام الإدارة</p>
+                    </div>
+                </div>
+                <button id="sidebar-close-btn" class="lg:hidden text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <!-- معلومات المستخدم -->
+            <div class="p-4 border-b border-gray-100">
+                <div class="flex items-center space-x-3 space-x-reverse">
+                    <div class="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                        <span id="user-avatar">م</span>
+                    </div>
+                    <div class="flex-1">
+                        <p id="user-name-display" class="font-semibold text-gray-800">مدير النظام</p>
+                        <p id="user-role-display" class="text-xs text-gray-500">مدير</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- روابط التنقل -->
+            <nav class="p-4 space-y-1 overflow-y-auto" style="max-height: calc(100vh - 250px);">
+                <a href="#dashboard" data-page="dashboard" class="nav-link flex items-center space-x-3 space-x-reverse px-4 py-3 rounded-xl text-gray-600 hover:bg-purple-50 hover:text-purple-700 transition-all group active">
+                    <i class="fas fa-th-large w-6 text-center"></i>
+                    <span>لوحة التحكم</span>
+                </a>
+                <a href="#children" data-page="children" class="nav-link flex items-center space-x-3 space-x-reverse px-4 py-3 rounded-xl text-gray-600 hover:bg-purple-50 hover:text-purple-700 transition-all group">
+                    <i class="fas fa-child w-6 text-center"></i>
+                    <span>إدارة الأطفال</span>
+                </a>
+                <a href="#sponsors" data-page="sponsors" class="nav-link flex items-center space-x-3 space-x-reverse px-4 py-3 rounded-xl text-gray-600 hover:bg-purple-50 hover:text-purple-700 transition-all group">
+                    <i class="fas fa-users w-6 text-center"></i>
+                    <span>الكافلون</span>
+                </a>
+                <a href="#sponsorships" data-page="sponsorships" class="nav-link flex items-center space-x-3 space-x-reverse px-4 py-3 rounded-xl text-gray-600 hover:bg-purple-50 hover:text-purple-700 transition-all group">
+                    <i class="fas fa-hand-holding-heart w-6 text-center"></i>
+                    <span>الكفالات</span>
+                </a>
+                <a href="#donations" data-page="donations" class="nav-link flex items-center space-x-3 space-x-reverse px-4 py-3 rounded-xl text-gray-600 hover:bg-purple-50 hover:text-purple-700 transition-all group">
+                    <i class="fas fa-donate w-6 text-center"></i>
+                    <span>التبرعات</span>
+                </a>
+                <a href="#visits" data-page="visits" class="nav-link flex items-center space-x-3 space-x-reverse px-4 py-3 rounded-xl text-gray-600 hover:bg-purple-50 hover:text-purple-700 transition-all group">
+                    <i class="fas fa-clipboard-check w-6 text-center"></i>
+                    <span>الزيارات</span>
+                </a>
+                <a href="#reports" data-page="reports" class="nav-link flex items-center space-x-3 space-x-reverse px-4 py-3 rounded-xl text-gray-600 hover:bg-purple-50 hover:text-purple-700 transition-all group">
+                    <i class="fas fa-chart-bar w-6 text-center"></i>
+                    <span>التقارير</span>
+                </a>
+                <a href="#settings" data-page="settings" class="nav-link flex items-center space-x-3 space-x-reverse px-4 py-3 rounded-xl text-gray-600 hover:bg-purple-50 hover:text-purple-700 transition-all group">
+                    <i class="fas fa-cog w-6 text-center"></i>
+                    <span>الإعدادات</span>
+                </a>
+            </nav>
+
+            <!-- زر تسجيل الخروج -->
+            <div class="p-4 border-t border-gray-100 mt-auto">
+                <button id="logout-btn" class="flex items-center justify-center w-full space-x-2 space-x-reverse px-4 py-3 rounded-xl text-red-500 hover:bg-red-50 transition-all">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>تسجيل الخروج</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- ==================== المحتوى الرئيسي ==================== -->
+        <main class="flex-1 flex flex-col min-h-screen">
+            
+            <!-- شريط التنقل العلوي (Navbar) -->
+            <header class="bg-white shadow-sm sticky top-0 z-20">
+                <div class="flex items-center justify-between px-4 lg:px-8 py-3">
+                    <!-- زر القائمة للجوال -->
+                    <button id="sidebar-toggle-btn" class="lg:hidden text-gray-500 hover:text-gray-700 p-2">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                    
+                    <!-- عنوان الصفحة الحالية -->
+                    <h2 id="current-page-title" class="text-xl font-bold text-gray-800">لوحة التحكم</h2>
+                    
+                    <!-- أيقونات سريعة -->
+                    <div class="flex items-center space-x-2 space-x-reverse">
+                        <!-- زر تثبيت التطبيق -->
+                        <button id="install-btn" class="hidden p-2 text-gray-400 hover:text-purple-600 transition-colors" title="تثبيت التطبيق">
+                            <i class="fas fa-download"></i>
+                        </button>
+                        <!-- حالة الاتصال -->
+                        <span id="online-status" class="flex items-center text-sm text-green-600">
+                            <i class="fas fa-circle text-xs ml-1"></i>
+                            <span class="hidden sm:inline">متصل</span>
+                        </span>
+                        <button id="refresh-btn" class="p-2 text-gray-400 hover:text-purple-600 transition-colors" title="تحديث البيانات">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- حاوية الصفحات -->
+            <div id="page-content" class="flex-1 p-4 lg:p-8 overflow-y-auto">
+                <!-- سيتم تحميل محتوى الصفحات هنا ديناميكياً -->
+            </div>
+        </main>
+    </div>
+
+    <!-- ==================== نافذة Toast للإشعارات ==================== -->
+    <div id="toast-container" class="fixed top-4 left-4 z-50 space-y-2 flex flex-col items-end"></div>
+
+    <!-- ==================== نافذة Modal عامة ==================== -->
+    <div id="modal-overlay" class="hidden fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4">
+        <div id="modal-content" class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto transform transition-all">
+            <!-- محتوى المودال يتم تحميله ديناميكياً -->
+        </div>
+    </div>
+
+    <!-- ==================== السكريبتات ==================== -->
+    <!-- مكتبة localStorage مغلفة -->
+    <script src="db.js"></script>
+    <!-- نظام المصادقة -->
+    <script src="auth.js"></script>
+    <!-- لوحة التحكم -->
+    <script src="dashboard.js"></script>
+    <!-- التقارير -->
+    <script src="reports.js"></script>
+    <!-- الاستيراد والتصدير -->
+    <script src="import-export.js"></script>
+    <!-- التطبيق الرئيسي -->
+    <script src="app.js"></script>
+
+    <!-- تسجيل Service Worker -->
+    <script>
+        // تسجيل Service Worker للتطبيق التقدمي (PWA)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('sw.js').then(function(registration) {
+                    console.log('تم تسجيل Service Worker بنجاح:', registration.scope);
+                }, function(error) {
+                    console.log('فشل تسجيل Service Worker:', error);
+                });
+            });
+        }
+
+        // معالجة حدث تثبيت التطبيق (PWA Install)
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', function(e) {
+            e.preventDefault();
+            deferredPrompt = e;
+            const installBtn = document.getElementById('install-btn');
+            if (installBtn) {
+                installBtn.classList.remove('hidden');
+                installBtn.addEventListener('click', function() {
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then(function(choiceResult) {
+                        if (choiceResult.outcome === 'accepted') {
+                            console.log('تم تثبيت التطبيق');
+                            installBtn.classList.add('hidden');
+                        }
+                        deferredPrompt = null;
+                    });
+                });
+            }
+        });
+
+        // كشف حالة الاتصال بالإنترنت
+        function updateOnlineStatus() {
+            const statusElement = document.getElementById('online-status');
+            if (navigator.onLine) {
+                statusElement.innerHTML = '<i class="fas fa-circle text-xs ml-1 text-green-500"></i><span class="hidden sm:inline">متصل</span>';
+                statusElement.className = 'flex items-center text-sm text-green-600';
+            } else {
+                statusElement.innerHTML = '<i class="fas fa-circle text-xs ml-1 text-red-500"></i><span class="hidden sm:inline">غير متصل</span>';
+                statusElement.className = 'flex items-center text-sm text-red-600';
+            }
+        }
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+        updateOnlineStatus();
+    </script>
+</body>
+</html>
